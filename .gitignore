@@ -1,0 +1,9 @@
+index.js
+
+/dist/
+/node_modules/
+
+.vscode
+.idea
+
+bin
