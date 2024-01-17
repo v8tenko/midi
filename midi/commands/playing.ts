@@ -3,8 +3,10 @@ import easymidi from 'easymidi';
 
 import {lastValueFrom} from 'rxjs';
 import {logger} from '../logger';
-import {ChordObservable, State} from '../types';
+import {Chord, ChordObservable, State} from '../types';
 import {chordToString, equals} from '../utils';
+import {takeWhile} from 'rxjs';
+import {match} from '../chords';
 
 export const play = (in$: ChordObservable, state: State, output: easymidi.Output) => {
     if (state.status !== 'playing') {
@@ -17,10 +19,12 @@ export const play = (in$: ChordObservable, state: State, output: easymidi.Output
 
     const {payload} = state;
 
-    in$.subscribe(async (chord) => {
+    in$
+    .pipe(
+        takeWhile((chord: Chord) => match(chord) !== 'stop_playing')
+    )
+    .subscribe(async (chord) => {
         const expected = payload[lastCorrect];
-
-        console.log(chord, expected);
 
         if (lastCorrect === payload.length) {
             lastCorrect = 0;
@@ -33,11 +37,10 @@ export const play = (in$: ChordObservable, state: State, output: easymidi.Output
         } else {
             logger.warning(`Expected ${chordToString(expected)}; Got ${chordToString(chord)}`);
 
-            // await sound.play('midi/assets/error.mp3');
             output.send('noteon', {
-                channel: 0,
+                channel: 12,
                 note: 20,
-                velocity: 100,
+                velocity: 128,
             });
         }
     });
