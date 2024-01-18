@@ -1,34 +1,34 @@
-import sound from 'sound-play';
 import easymidi from 'easymidi';
 
-import {lastValueFrom} from 'rxjs';
+import {connect, lastValueFrom, share, shareReplay, take, tap, toArray} from 'rxjs';
 import {logger} from '../logger';
 import {Chord, ChordObservable, State} from '../types';
 import {chordToString, equals} from '../utils';
 import {takeWhile} from 'rxjs';
 import {match} from '../chords';
+import { config } from '../config';
 
 export const play = (in$: ChordObservable, state: State, output: easymidi.Output) => {
     if (state.status !== 'playing') {
         logger.error('Status is not playing');
 
-        return;
+        return Promise.resolve(undefined);
     }
 
     let lastCorrect = 0;
 
     const {payload} = state;
 
-    in$
-    .pipe(
-        takeWhile((chord: Chord) => match(chord) !== 'stop_playing')
+    const result$ = in$.pipe(
+        takeWhile((chord: Chord) => match(chord) !== 'stop_playing'),
     )
-    .subscribe(async (chord) => {
-        const expected = payload[lastCorrect];
-
+    
+    result$.subscribe((chord) => {
         if (lastCorrect === payload.length) {
             lastCorrect = 0;
         }
+
+        const expected = payload[lastCorrect];
 
         if (equals(chord, expected)) {
             lastCorrect++;
@@ -38,12 +38,14 @@ export const play = (in$: ChordObservable, state: State, output: easymidi.Output
             logger.warning(`Expected ${chordToString(expected)}; Got ${chordToString(chord)}`);
 
             output.send('noteon', {
-                channel: 12,
-                note: 20,
-                velocity: 128,
+                /* accepts only [0;12] value */
+                channel: config.channel as 0,
+                note: config.note,
+                velocity: 127,
             });
         }
-    });
+    })
+    
 
-    return lastValueFrom(in$) as any;
+    return lastValueFrom(result$).then(() => undefined);
 };

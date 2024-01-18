@@ -1,32 +1,12 @@
-import inquirer from 'inquirer';
 import easymidi from 'easymidi';
 import {logger} from './logger';
 import {bufferTime, filter, fromEvent} from 'rxjs';
 import {NoteObservable} from './types';
 import {run} from './tick';
+import {initailize} from './config';
 
 export const start = async () => {
-    const inputSources = easymidi.getInputs();
-    const outputSources = easymidi.getOutputs();
-
-    if (!inputSources.length) {
-        logger.error('No input source');
-    }
-
-    const {inputDevice, outputDevice} = await inquirer.prompt([
-        {
-            type: 'list',
-            name: 'inputDevice',
-            message: 'Select input source',
-            choices: inputSources,
-        },
-        {
-            type: 'list',
-            name: 'outputDevice',
-            message: 'Select output source',
-            choices: outputSources
-        }
-    ]);
+    const {input: inputDevice, output: outputDevice} = await initailize()
 
     const keyboard = new easymidi.Input(inputDevice);
     const output = new easymidi.Output(outputDevice);
@@ -36,7 +16,7 @@ export const start = async () => {
         filter((chord) => chord.length !== 0),
     );
 
-    logger.info(`Connected to device ${inputSources}`);
+    logger.info(`Connected to device ${inputDevice}`);
 
     run(noteOn$, output);
 };

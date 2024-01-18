@@ -4,7 +4,7 @@ import {logger} from './logger';
 import {ChordObservable, NoteObservable, State, Status, statuses} from './types';
 
 let indexOfStatus = 0;
-let state: State = {status: 'waiting', payload: undefined};
+let state = {status: 'waiting', payload: undefined} as State;
 
 export const tick = (in$: ChordObservable, output: easymidi.Output) => {
     switch (state.status) {
@@ -33,9 +33,6 @@ export const run = async (in$: ChordObservable, output: easymidi.Output) => {
 
         const status = next();
 
-        state = {
-            status,
-            payload,
-        };
+        Object.assign(state, { status, payload });
     }
 };

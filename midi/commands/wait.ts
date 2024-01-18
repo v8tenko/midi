@@ -1,11 +1,5 @@
 import {
-    buffer,
-    bufferTime,
-    connect,
-    debounceTime,
-    filter,
     lastValueFrom,
-    map,
     skipWhile,
     take,
 } from 'rxjs';
@@ -15,8 +9,8 @@ import {match} from '../chords';
 export const waitForChord = async (in$: ChordObservable) => {
     const result$ = in$.pipe(
         skipWhile((chord) => match(chord) !== 'start'),
-        take(1),
+        take(1)
     );
 
-    return lastValueFrom(result$);
+    return lastValueFrom(result$).then(() => undefined);
 };
